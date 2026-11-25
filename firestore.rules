@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /plazas/{plazaId} {
+      allow read: if request.auth != null
+        && plazaId in ['1', '2'];
+
+      allow create, update: if request.auth != null
+        && plazaId in ['1', '2']
+        && request.resource.data.keys().hasAll(
+          ['estado', 'actualizado', 'duracion'])
+        && request.resource.data.keys().hasOnly(
+          ['estado', 'actualizado', 'duracion'])
+        && request.resource.data.estado in
+          ['libre', 'ocupada', 'sin_confirmar']
+        && request.resource.data.actualizado == request.time
+        && request.resource.data.duracion is int
+        && request.resource.data.duracion >= 0
+        && request.resource.data.duracion <= 480;
+
+      allow delete: if false;
+    }
+  }
+}
