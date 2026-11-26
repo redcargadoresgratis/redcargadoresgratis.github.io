@@ -1,0 +1,24 @@
+{
+  "name": "Carga Gratis - Castellón de Rugat",
+  "short_name": "Castellón de Rugat",
+  "start_url": "/castellon-de-rugat/",
+  "scope": "/castellon-de-rugat/",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#102c46",
+  "icons": [
+    {
+      "src": "../icon-192-v3.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../icon-512-v3.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "id": "/castellon-de-rugat/"
+}
