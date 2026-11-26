@@ -1,28 +1,76 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{coleccion}/{plazaId} {
 
-      allow read: if request.auth != null
-        && coleccion in ['plazas', 'plazas_pobla_del_duc']
-        && plazaId in ['1', '2'];
+    function conectado() {
+      return request.auth != null;
+    }
 
-      allow create, update: if request.auth != null
-        && coleccion in ['plazas', 'plazas_pobla_del_duc']
-        && plazaId in ['1', '2']
-        && request.resource.data.keys().hasAll(
-          ['estado', 'actualizado', 'duracion'])
+    function esAdmin() {
+      return conectado()
+        && exists(/databases/$(database)/documents/administradores/$(request.auth.uid));
+    }
+
+    function plazaValida() {
+      return request.resource.data.keys().hasAll(
+        ['estado', 'actualizado', 'duracion'])
         && request.resource.data.keys().hasOnly(
-          ['estado', 'actualizado', 'duracion'])
+        ['estado', 'actualizado', 'duracion'])
         && request.resource.data.estado in
-          ['libre', 'ocupada', 'sin_confirmar']
+        ['libre', 'ocupada', 'sin_confirmar']
         && request.resource.data.actualizado == request.time
         && request.resource.data.duracion is int
         && request.resource.data.duracion >= 0
         && request.resource.data.duracion <= 480;
+    }
+
+    // Compatibilidad con la aplicacion antigua
+    match /{coleccion}/{plazaId} {
+
+      allow read: if conectado()
+        && coleccion in ['plazas', 'plazas_pobla_del_duc']
+        && plazaId in ['1', '2'];
+
+      allow create, update: if conectado()
+        && coleccion in ['plazas', 'plazas_pobla_del_duc']
+        && plazaId in ['1', '2']
+        && plazaValida();
 
       allow delete: if false;
+    }
+
+    // Nueva estructura de municipios
+    match /municipios/{municipioId} {
+
+      allow get: if esAdmin()
+        || (conectado() && resource.data.activo == true);
+
+      allow list: if esAdmin();
+
+      allow create, update, delete: if esAdmin();
+
+      match /plazas/{plazaId} {
+
+        function municipioActivo() {
+          return get(/databases/$(database)/documents/municipios/$(municipioId)).data.activo == true;
+        }
+
+        allow read: if esAdmin()
+          || (conectado() && municipioActivo());
+
+        allow update: if conectado()
+          && municipioActivo()
+          && plazaValida();
+
+        allow create, delete: if esAdmin();
+      }
+    }
+
+    // Administradores autorizados
+    match /administradores/{usuarioId} {
+      allow read, write: if false;
     }
   }
 }
